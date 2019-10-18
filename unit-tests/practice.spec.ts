@@ -63,7 +63,7 @@ describe('practice', () => {
     })
   });
 
-  xdescribe('UserService', () => {
+  describe('UserService', () => {
     beforeEach(() => {
       TestBed.configureTestingModule({
         imports: [
