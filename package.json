@@ -34,6 +34,7 @@
     "jasmine-core": "3.0.0",
     "jasmine-marbles": "0.6.0",
     "ng2-mock-component": "0.1.0",
+    "rx-sandbox": "^1.0.3",
     "rxjs": "6.5.3",
     "rxjs-compat": "6.5.3",
     "zone.js": "0.8.21"

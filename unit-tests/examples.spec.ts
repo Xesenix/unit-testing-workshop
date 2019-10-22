@@ -15,8 +15,9 @@ import {
 import { Router } from '@angular/router';
 import { SpyLocation } from '@angular/common/testing';
 import { hot, cold } from 'jasmine-marbles';
-import { of } from 'rxjs';
-import { map, tap } from 'rxjs/operators';
+import { of, throwError } from 'rxjs';
+import { createScheduler } from 'rxjs/testing';
+import { map, tap, switchMap } from 'rxjs/operators';
 
 import { RoutingTestingModule } from '../testing/routing.module';
 import { navigateTo } from '../testing/utils';
@@ -183,6 +184,8 @@ describe('examples', () => {
     });
   });
 
+  // @see https://medium.com/@bencabanes/marble-testing-observable-introduction-1f5ad39231c
+  // @see https://rxjs-dev.firebaseapp.com/guide/testing/marble-testing
   describe('marbles', () => {
     it('should work', () => {
       // Arrange
@@ -192,7 +195,7 @@ describe('examples', () => {
         msg: 'test'
       };
 
-      const expected$ = hot('(a|)', { a: expected });
+      const expected$ = cold('(a|)', { a: expected });
 
       // Act
       const result$ = of(expected);
@@ -200,5 +203,23 @@ describe('examples', () => {
       // Assert
       expect(result$).toBeObservable(expected$);
     });
+
+    it('should throw error', fakeAsync(() => {
+      // Arrange
+      const error = 'boom';
+      // this one is very tricky for some reasons it doesnt work for any time value
+      const expected$ = cold('500ms #', null, error);
+
+      // Act
+      const result$ = cold('500ms 1').pipe(switchMap(() => throwError(error)));
+
+      // Assert
+      expect(result$).toBeObservable(expected$);
+    }));
+  });
+
+  // @see https://dev.to/mokkapps/how-to-easily-write-and-debug-rxjs-marble-tests-55jc
+  describe('rx-sandbox', () => {
+
   });
 });
