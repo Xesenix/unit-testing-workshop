@@ -1,4 +1,3 @@
-import { NgZone } from '@angular/core';
 import { Location } from '@angular/common';
 import { TestBed, inject, fakeAsync, tick } from '@angular/core/testing';
 import { HttpClient } from '@angular/common/http';
@@ -14,10 +13,9 @@ import {
 } from 'apollo-angular/testing';
 import { Router } from '@angular/router';
 import { SpyLocation } from '@angular/common/testing';
-import { hot, cold } from 'jasmine-marbles';
+import { cold } from 'jasmine-marbles';
 import { of, throwError } from 'rxjs';
-import { createScheduler } from 'rxjs/testing';
-import { map, tap, switchMap } from 'rxjs/operators';
+import { map, switchMap } from 'rxjs/operators';
 
 import { RoutingTestingModule } from '../testing/routing.module';
 import { navigateTo } from '../testing/utils';
@@ -31,106 +29,113 @@ describe('examples', () => {
         ApolloTestingModule, // similar to HttpClientTestingModule but for graphql requests
       ],
     });
-  })
+  });
 
   describe('navigation', () => {
     // when working with navigation we need to wait for it to finish
     // we can do it either with async await
     // or fakeAsync tick
 
-    it('should navigate to home with async await', inject([
-      Router,
-      Location,
-    ], async (
-      router: Router, // this part probably will be used somwhere in tested service or coponent
-      ngLocation: SpyLocation, // this part will help us in testing
-    ) => {
-      // Arrange
-      const path = '/home';
-      
-      // Act
-      await navigateTo(path);
+    it('should navigate to home with async await', inject(
+      [Router, Location],
+      async (
+        router: Router, // this part probably will be used somwhere in tested service or coponent
+        ngLocation: SpyLocation // this part will help us in testing
+      ) => {
+        // Arrange
+        const path = '/home';
 
-      // Assert
-      expect(ngLocation.path()).toBe(path, 'after navigation'); 
-    }));
+        // Act
+        await navigateTo(path);
 
+        // Assert
+        expect(ngLocation.path()).toBe(path, 'after navigation');
+      }
+    ));
 
-    it('should navigate to home with fakeAsync tick', fakeAsync(inject([
-      Router,
-      Location,
-    ], (
-      router: Router, // this part probably will be used somwhere in tested service or coponent
-      ngLocation: SpyLocation // this part will help us in testing
-    ) => {
-      // Arrange
-      const path = '/home';
-      
-      // Act
-      navigateTo(path);
-      tick();
+    it('should navigate to home with fakeAsync tick', fakeAsync(
+      inject(
+        [Router, Location],
+        (
+          router: Router, // this part probably will be used somwhere in tested service or coponent
+          ngLocation: SpyLocation // this part will help us in testing
+        ) => {
+          // Arrange
+          const path = '/home';
 
-      // Assert
-      expect(ngLocation.path()).toBe(path, 'after navigation'); 
-    })));
+          // Act
+          navigateTo(path);
+          tick();
+
+          // Assert
+          expect(ngLocation.path()).toBe(path, 'after navigation');
+        }
+      )
+    ));
   });
 
   describe('http communication', () => {
     describe('plain', () => {
-      it('should request data from server', fakeAsync(inject([
-        HttpClient,
-        HttpTestingController,
-      ], (
-        httpClient: HttpClient, // this part probably will be used somwhere in tested service or coponent
-        httpMock: HttpTestingController, // this part will help us in testing
-      ) => {
-        // Arrange
-        let result: any = 'no one expects spanish inquisition';
-        const path = '{apiEndpoint}/home';
-        const data = { some: 'data' };
-        const expected = { ...data, wasProcessed: true };
+      it('should request data from server', fakeAsync(
+        inject(
+          [HttpClient, HttpTestingController],
+          (
+            httpClient: HttpClient, // this part probably will be used somwhere in tested service or coponent
+            httpMock: HttpTestingController // this part will help us in testing
+          ) => {
+            // Arrange
+            let result: any = 'no one expects spanish inquisition';
+            const path = '{apiEndpoint}/home';
+            const data = { some: 'data' };
+            const expected = { ...data, wasProcessed: true };
 
-        // Act
-        httpClient.get(path)
-          // something may modify returned server result
-          .pipe(map((data) => Object.assign(data, { wasProcessed: true })))
-          // but we just care about what we get in the end
-          .subscribe((data) => result = data)
+            // Act
+            httpClient
+              .get(path)
+              // something may modify returned server result
+              .pipe(map((data) => Object.assign(data, { wasProcessed: true })))
+              // but we just care about what we get in the end
+              .subscribe((data) => (result = data));
 
-        // Assert
-        httpMock.expectOne(path).flush(data);
-        tick();
+            // Assert
+            httpMock.expectOne(path).flush(data);
+            tick();
 
-        expect(result).toEqual(expected); // after processing server response
-        // check if there arent any other not handled requests
-        httpMock.verify();
-      })));
+            expect(result).toEqual(expected); // after processing server response
+            // check if there arent any other not handled requests
+            httpMock.verify();
+          }
+        )
+      ));
     });
 
     describe('with marbles', () => {
-      it('should request data from server', inject([
-        HttpClient,
-        HttpTestingController,
-      ], (
-        httpClient: HttpClient, // this part probably will be used somwhere in tested service or coponent
-        httpMock: HttpTestingController, // this part will help us in testing
-      ) => {
-        // Arrange
-        const path = '{apiEndpoint}/home';
-        const data = { some: 'data' };
-        const expected = { ...data, wasProcessed: true };
-        const result$ = httpClient.get(path)
-          // something may modify returned server result
-          .pipe(map((data) => Object.assign(data, { wasProcessed: true })))
+      it('should request data from server', inject(
+        [HttpClient, HttpTestingController],
+        (
+          httpClient: HttpClient, // this part probably will be used somwhere in tested service or coponent
+          httpMock: HttpTestingController // this part will help us in testing
+        ) => {
+          // Arrange
+          const path = '{apiEndpoint}/home';
+          const data = { some: 'data' };
+          const expected = { ...data, wasProcessed: true };
+          const result$ = httpClient
+            .get(path)
+            // something may modify returned server result
+            .pipe(map((data) => Object.assign(data, { wasProcessed: true })));
 
-        // Act
-        // sometimes we may need to call some function in same context that
-        // marbles are working we can use this trick for it
-        cold('---a|', { a: true }).subscribe(() => httpMock.expectOne(path).flush(data));
+          // Act
+          // sometimes we may need to call some function in same context that
+          // marbles are working we can use this trick for it
+          cold('---a|', { a: true }).subscribe(() =>
+            httpMock.expectOne(path).flush(data)
+          );
 
-        // Assert
-        expect(result$).toBeObservable(cold('---(a|)', { a: expected })); // after processing server response
-      }));
+          // Assert
+          expect(result$).toBeObservable(cold('---(a|)', { a: expected })); // after processing server response
+        }
+      ));
     });
   });
 
@@ -147,40 +152,44 @@ describe('examples', () => {
 `;
 
     describe('plain', () => {
-      it('should request data from server', fakeAsync(inject([
-        Apollo,
-        ApolloTestingController,
-      ], (
-        apollo: Apollo, // this part probably will be used somwhere in tested service or coponent
-        apolloMock: ApolloTestingController, // this part will help us in testing
-      ) => {
-        // Arrange
-        let result: any = 'no one expects spanish inquisition';
-        const path = '{apiEndpoint}/home';
-        const data = {
-          data: {
-            beer: {
-              id: 0,
-              name: 'Mr Apollo',
-              taste: 'awful',
-            },
-          },
-        };
-        const expected = { ...data.data };
+      it('should request data from server', fakeAsync(
+        inject(
+          [Apollo, ApolloTestingController],
+          (
+            apollo: Apollo, // this part probably will be used somwhere in tested service or coponent
+            apolloMock: ApolloTestingController // this part will help us in testing
+          ) => {
+            // Arrange
+            let result: any = 'no one expects spanish inquisition';
+            const path = '{apiEndpoint}/home';
+            const data = {
+              data: {
+                beer: {
+                  id: 0,
+                  name: 'Mr Apollo',
+                  taste: 'awful',
+                },
+              },
+            };
+            const expected = { ...data.data };
 
-        // Act
-        apollo.query({
-          query: GET_BEER_QUERY,
-        }).subscribe(({ data }) => result = data);
+            // Act
+            apollo
+              .query({
+                query: GET_BEER_QUERY,
+              })
+              .subscribe(({ data }) => (result = data));
 
-        // Assert
-        apolloMock.expectOne(GET_BEER_QUERY).flush(data);
-        tick();
+            // Assert
+            apolloMock.expectOne(GET_BEER_QUERY).flush(data);
+            tick();
 
-        expect(result).toEqual(expected); // after processing server response
-        // check if there arent any other not handled requests
-        apolloMock.verify();
-      })));
+            expect(result).toEqual(expected); // after processing server response
+            // check if there arent any other not handled requests
+            apolloMock.verify();
+          }
+        )
+      ));
     });
   });
 
@@ -192,7 +201,7 @@ describe('examples', () => {
       const expected = {
         type: 'TECHNICAL',
         level: 'ERROR',
-        msg: 'test'
+        msg: 'test',
       };
 
       const expected$ = cold('(a|)', { a: expected });
@@ -219,7 +228,5 @@ describe('examples', () => {
   });
 
   // @see https://dev.to/mokkapps/how-to-easily-write-and-debug-rxjs-marble-tests-55jc
-  describe('rx-sandbox', () => {
-
-  });
+  describe('rx-sandbox', () => {});
 });

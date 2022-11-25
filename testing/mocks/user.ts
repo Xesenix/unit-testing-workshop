@@ -1,8 +1,7 @@
-
 import { ReplaySubject } from 'rxjs';
-import { Injectable, NgZone } from '@angular/core';
+import { Injectable } from '@angular/core';
 
-import { IUser } from '../unit-tests/practice';
+import { IUser } from '../../unit-tests/practice';
 
 @Injectable({ providedIn: 'root' })
 export class UserServiceMock {
